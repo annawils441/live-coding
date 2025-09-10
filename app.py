@@ -1,16 +1,20 @@
 from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
+from flask_bcrypt import Bcrypt # The new import for hashing
 import os
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///students.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+bcrypt = Bcrypt(app) # Initialize Bcrypt
 
 class Student(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
+    # The new password field to store the hashed password
+    password = db.Column(db.String(100), nullable=False)
 
     def __repr__(self):
         return f'<Student {self.name}>'
@@ -26,10 +30,11 @@ def index():
 @app.route('/add_student', methods=['POST'])
 def add_student():
     if request.method == 'POST':
-        name = request.form['name']
-        email = request.form['email']
-
-        new_student = Student(name=name, email=email)
+        name = request.form['name'].lower().strip()
+        email = request.form['email'].lower()
+        plain_password = request.form['password'] # Get the plain-text password from the form
+        hashed_password = bcrypt.generate_password_hash(plain_password).decode('utf-8')
+        new_student = Student(name=name, email=email, password=hashed_password)
 
         try:
             db.session.add(new_student)

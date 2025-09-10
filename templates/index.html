@@ -12,6 +12,7 @@
         <form action="{{ url_for('add_student') }}" method="POST">
             <input type="text" name="name" placeholder="Student Name" required>
             <input type="email" name="email" placeholder="Student Email" required>
+            <input type="password" name="password" placeholder="Password" required>
             <button type="submit">Add Student</button>
         </form>
 
@@ -32,8 +33,8 @@
         <tbody>
             {% for student in students %}
             <tr>
-                <td>{{ student.name }}</td>
-                <td>{{ student.email }}</td>
+                <td>{{student.name}}</td>
+                <td>{{student.email}}</td>
                 <td>
                     <!-- Action buttons go here later -->
                     <a class="action_button" href="{{ url_for('update_student', student_id=student.id) }}">Edit</a>
