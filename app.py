@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt # The new import for hashing
 import os
@@ -8,6 +8,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///students.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app) # Initialize Bcrypt
+app.config['SECRET_KEY'] = 'a_very_secret_and_long_random_key'
 
 class Student(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -68,6 +69,31 @@ def delete_student(student_id):
         return redirect(url_for('index'))
     except Exception as e:
         return f"An error occurred: {e}"
+
+@app.route('/login', methods=['GET','POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+
+        # Find the student with the given email
+        student = Student.query.filter_by(email=email).first()
+
+        # Check if the student exists AND if the pwd is correct
+        if student and bcrypt.check_password_hash(student.password, password):
+            session['user_id'] = student.id
+            return render_template('login.html',
+            message = "Login successful!", message_type="success")
+        else:
+            return render_template('login.html', message = "Login failed. Please check your email and password.",
+            message_type = "error")
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.pop('user_id', None)
+    return render_template('login.html', message = "You have been logged out.",
+    message_type = "success")
 
 with app.app_context():
     db.create_all()
